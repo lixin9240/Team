@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('products', function (Blueprint $table) {
-            $table->id();
+            $table->id();// 主键
             $table->string('name', 200)->notNullable()->comment('商品名称');
             $table->bigInteger('category_id')->unsigned()->notNullable()->comment('分类ID');
             $table->string('type', 50)->notNullable()->comment('类型:文创/物料');
@@ -23,16 +23,16 @@ return new class extends Migration
             $table->integer('version')->notNullable()->default(0)->comment('乐观锁版本号');
             $table->timestamps();
 
-            $table->foreign('category_id')->references('id')->on('product_categories');
-            $table->index(['category_id', 'status'], 'idx_category_status');
-            $table->index('price', 'idx_price');
-            $table->index(['status', 'type'], 'idx_status_type');
-            $table->index('name', 'idx_name');
+            $table->foreign('category_id')->references('id')->on('product_categories');// 分类ID外键
+            $table->index(['category_id', 'status'], 'idx_category_status');// 分类ID和状态索引
+            $table->index('price', 'idx_price');// 单价索引
+            $table->index(['status', 'type'], 'idx_status_type');// 状态和类型索引
+            $table->index('name', 'idx_name');// 商品名称索引
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('products');
+        Schema::dropIfExists('products');// 删除商品表
     }
 };

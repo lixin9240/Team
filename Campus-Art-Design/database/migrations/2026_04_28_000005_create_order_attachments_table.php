@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('order_attachments', function (Blueprint $table) {
-            $table->id();
+            $table->id();// 主键
             $table->bigInteger('order_id')->unsigned()->notNullable()->comment('订单ID');
             $table->string('file_url', 500)->notNullable()->comment('OSS文件路径');
             $table->string('file_name', 255)->notNullable()->comment('原始文件名');
@@ -20,13 +20,13 @@ return new class extends Migration
             $table->tinyInteger('is_deleted')->default(0)->comment('0:正常 1:逻辑删除');
             $table->timestamps();
 
-            $table->foreign('order_id')->references('id')->on('orders')->onDelete('cascade');
-            $table->index('order_id', 'idx_order_order_id');
+            $table->foreign('order_id')->references('id')->on('orders')->onDelete('cascade');// 订单ID外键
+            $table->index('order_id', 'idx_order_order_id');// 订单ID索引
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('order_attachments');
+        Schema::dropIfExists('order_attachments');// 删除订单附件表
     }
 };
