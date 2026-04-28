@@ -24,11 +24,6 @@ class User extends Authenticatable implements JWTSubject
         ];
     }
 
-    public function passwordHistories()
-    {
-        return $this->hasMany(PasswordHistory::class);
-    }
-
     public function orders()
     {
         return $this->hasMany(Order::class);
