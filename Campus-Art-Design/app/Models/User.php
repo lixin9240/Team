@@ -14,14 +14,8 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements JWTSubject
 {
-    /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -33,6 +27,16 @@ class User extends Authenticatable implements JWTSubject
     public function passwordHistories()
     {
         return $this->hasMany(PasswordHistory::class);
+    }
+
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function auditLogs()
+    {
+        return $this->hasMany(AuditLog::class, 'operator_id');
     }
 
     public function getJWTIdentifier(): mixed
