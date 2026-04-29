@@ -2,129 +2,178 @@
 
 namespace App\Http\Controllers;
 
-use App\Mail\VerificationCodeMail;
 use App\Models\User;
+use App\Mail\VerificationCodeMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\ValidationException;
+use Tymon\JWTAuth\Facades\JWTAuth;
 
-class LXController extends \Illuminate\Routing\Controller
+class LXController extends Controller
 {
-    /**
-     * 发送验证码
-     */
-    public function sendVerificationCode(Request $request)
-    {
-        $validated = $request->validate([
-            'email' => 'required|string|email',
-        ]);
-
-        $email = $validated['email'];
-
-        // 生成6位随机验证码
-        $code = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-
-        // 使用缓存存储验证码，5分钟过期
-        Cache::put('verification_code:' . $email, $code, 300);
-
-        // 发送邮件
-        Mail::to($email)->send(new VerificationCodeMail($code));
-
-        return response()->json([
-            'message' => '验证码已发送',
-            'email' => $email,
-        ]);
-    }
-
-    /**
-     * 用户注册
-     * 需要验证邮箱验证码
-     */
     public function register(Request $request)
     {
-        $validated = $request->validate([
+        $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|unique:users',
-            'account' => 'required|string|unique:users',
-            'phone' => 'required|string|unique:users',
-            'password' => 'required|string|min:6',
-            'code' => 'required|string|size:6',
+            'email' => 'required|string|email|max:255|unique:users',
+            'account' => 'required|string|max:255|unique:users',
+            'phone' => 'nullable|string|max:20',
+            'password' => 'required|string|min:8|confirmed',
+            'verification_code' => 'required|string|size:6',
         ]);
 
-        $email = $validated['email'];
-        $cacheKey = 'verification_code:' . $email;
+        $email = $request->email;
+        $verificationCode = $request->verification_code;
+        $type = 'register';
 
-        // 验证邮箱验证码
+        $cacheKey = 'verification_code_' . $type . '_' . $email;
         $cachedCode = Cache::get($cacheKey);
 
-        if (!$cachedCode) {
-            return response()->json(['error' => '验证码已过期或不存在'], 400);
+        if (!$cachedCode || $cachedCode !== $verificationCode) {
+            throw ValidationException::withMessages([
+                'verification_code' => ['验证码错误或已过期'],
+            ]);
         }
 
-        if ($cachedCode !== $validated['code']) {
-            return response()->json(['error' => '验证码错误'], 400);
-        }
-
-        // 创建用户
-        $user = User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'account' => $validated['account'],
-            'phone' => $validated['phone'],
-            'password' => $validated['password'],
-        ]);
-
-        // 删除已使用的验证码
         Cache::forget($cacheKey);
 
-        // 生成token，有效期一周（10080分钟）
-        $token = auth('api')->claims(['exp' => now()->addMinutes(10080)->timestamp])->login($user);
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'account' => $request->account,
+            'phone' => $request->phone,
+            'password' => Hash::make($request->password),
+        ]);
+
+        $token = JWTAuth::fromUser($user);
 
         return response()->json([
             'message' => '注册成功',
-            'access_token' => $token,
-            'token_type' => 'bearer',
-            'expires_in' => 10080 * 60,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'account' => $user->account,
+            'data' => [
+                'user' => $user,
+                'token' => $token,
             ],
-        ]);
+        ], 201);
     }
 
-    /**
-     * 用户登录
-     */
+    public function sendVerificationCode(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|string|email|max:255',
+            'type' => 'required|string|in:register,reset_password,delete_account,bind_email,change_email',
+        ]);
+
+        $email = $request->email;
+        $type = $request->type;
+
+        $allowedTypes = [
+            'register' => '注册',
+            'reset_password' => '重置密码',
+            'delete_account' => '注销账户',
+            'bind_email' => '绑定邮箱',
+            'change_email' => '修改邮箱',
+        ];
+
+        if ($type === 'delete_account' || $type === 'bind_email' || $type === 'change_email') {
+            if (!auth('api')->check()) {
+                throw ValidationException::withMessages([
+                    'type' => ['该操作需要先登录'],
+                ]);
+            }
+        }
+
+        if ($type === 'change_email') {
+            $user = auth('api')->user();
+            if ($user->email === $email) {
+                throw ValidationException::withMessages([
+                    'email' => ['新邮箱不能与当前邮箱相同'],
+                ]);
+            }
+        }
+
+        if ($type === 'bind_email') {
+            $user = auth('api')->user();
+            if ($user->email) {
+                throw ValidationException::withMessages([
+                    'email' => ['您已绑定邮箱，如需更换请使用修改邮箱功能'],
+                ]);
+            }
+        }
+
+        $code = rand(100000, 999999);
+
+        $cacheKey = 'verification_code_' . $type . '_' . $email;
+        Cache::put($cacheKey, $code, 300);
+
+        try {
+            Mail::to($email)->send(new VerificationCodeMail($code));
+
+            return response()->json([
+                'message' => '验证码发送成功，请查收邮件',
+                'data' => [
+                    'email' => $email,
+                    'type' => $type,
+                    'type_label' => $allowedTypes[$type],
+                    'expires_in' => 300,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => '验证码发送失败，请稍后重试',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function login(Request $request)
     {
-        $validated = $request->validate([
-            'email' => 'required|string|email',
+        $request->validate([
+            'login' => 'required|string',
             'password' => 'required|string',
         ]);
 
-        $credentials = [
-            'email' => $validated['email'],
-            'password' => $validated['password'],
-        ];
+        $credentials = request(['login', 'password']);
 
-        if (!$token = auth('api')->setTTL(10080)->attempt($credentials)) {
-            return response()->json(['error' => '邮箱或密码错误'], 401);
+        $loginField = filter_var($request->login, FILTER_VALIDATE_EMAIL) ? 'email' : 
+                      (preg_match('/^1[3-9]\d{9}$/', $request->login) ? 'phone' : 'account');
+
+        $user = User::where($loginField, $request->login)->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            throw ValidationException::withMessages([
+                'login' => ['邮箱、账户名或密码错误'],
+            ]);
         }
 
-        $user = auth('api')->user();
+        $token = JWTAuth::fromUser($user);
 
         return response()->json([
             'message' => '登录成功',
-            'access_token' => $token,
-            'token_type' => 'bearer',
-            'expires_in' => 10080 * 60,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'account' => $user->account,
+            'data' => [
+                'user' => $user,
+                'token' => $token,
+            ],
+        ]);
+    }
+//退出登录
+    public function logout(Request $request)
+    {
+        auth('api')->logout();
+
+        return response()->json([
+            'message' => '退出登录成功',
+        ]);
+    }
+    
+    //获取个人信息
+    public function me()
+    {
+        return response()->json([
+            'message' => '获取用户信息成功',
+            'data' => [
+                'user' => auth('api')->user(),
             ],
         ]);
     }
