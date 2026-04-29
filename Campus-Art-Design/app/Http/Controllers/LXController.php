@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
-class LXController extends Controller
+class LXController extends \Illuminate\Routing\Controller
 {
     public function register(Request $request)
     {
@@ -160,7 +160,7 @@ class LXController extends Controller
 //退出登录
     public function logout(Request $request)
     {
-        auth('api')->logout();
+        JWTAuth::invalidate(JWTAuth::getToken());
 
         return response()->json([
             'message' => '退出登录成功',
