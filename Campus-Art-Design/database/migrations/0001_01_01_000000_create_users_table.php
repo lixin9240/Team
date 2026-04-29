@@ -20,7 +20,6 @@ return new class extends Migration
             $table->string('phone')->unique();// 手机号
             $table->timestamp('email_verified_at')->nullable();// 邮箱验证时间
             $table->string('password');// 密码
-            $table->rememberToken();// 记住我令牌
             $table->timestamps();// 创建时间 更新时间
         });
     }
