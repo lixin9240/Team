@@ -1,15 +1,18 @@
 <?php
-
+// 商品分类模型
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-#[Fillable(['name', 'sort_order'])]
 class ProductCategory extends Model
 {
     use HasFactory;
 
     protected $table = 'product_categories';
+
+    protected $fillable = [
+        'name',
+        'sort_order',
+    ];
 }

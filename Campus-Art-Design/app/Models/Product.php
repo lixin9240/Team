@@ -1,18 +1,30 @@
 <?php
-
+// 商品模型
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['name', 'category_id', 'type', 'spec', 'price', 'stock', 'reserved_qty', 'cover_url', 'custom_rule', 'status', 'version'])]
 class Product extends Model
 {
     use HasFactory;
 
     protected $table = 'products';
+
+    protected $fillable = [
+        'name',
+        'category_id',
+        'type',
+        'spec',
+        'price',
+        'stock',
+        'reserved_qty',
+        'cover_url',
+        'custom_rule',
+        'status',
+        'version',
+    ];
 
     protected function casts(): array
     {
