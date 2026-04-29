@@ -13,6 +13,7 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 
 class LXController extends \Illuminate\Routing\Controller
 {
+    //注册
     public function register(Request $request)
     {
         $request->validate([
@@ -57,7 +58,7 @@ class LXController extends \Illuminate\Routing\Controller
             ],
         ], 201);
     }
-
+//发送验证码
     public function sendVerificationCode(Request $request)
     {
         $request->validate([
@@ -127,6 +128,7 @@ class LXController extends \Illuminate\Routing\Controller
         }
     }
 
+    //登录
     public function login(Request $request)
     {
         $request->validate([
@@ -166,6 +168,8 @@ class LXController extends \Illuminate\Routing\Controller
             'message' => '退出登录成功',
         ]);
     }
+    
+    
     
     //获取个人信息
     public function me()
