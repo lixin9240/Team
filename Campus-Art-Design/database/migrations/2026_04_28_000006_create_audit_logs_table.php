@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('from_status', 20)->nullable()->comment('原状态');
             $table->string('to_status', 20)->nullable()->comment('目标状态');
             $table->string('remark', 500)->nullable()->comment('操作备注');
-            $table->timestamps();
+            $table->timestamps();// 创建时间、更新时间(北京时间)
 
             $table->foreign('order_id')->references('id')->on('orders');// 订单ID外键
             $table->foreign('operator_id')->references('id')->on('users');// 操作人ID外键

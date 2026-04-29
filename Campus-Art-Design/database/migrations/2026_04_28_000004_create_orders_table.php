@@ -21,9 +21,9 @@ return new class extends Migration
             $table->string('status', 20)->notNullable()->default('draft')->comment('状态');
             $table->tinyInteger('design_status')->default(0)->comment('0:无需定制 1:待上传 2:已上传 3:审核通过 4:审核驳回');
             $table->decimal('paid_amount', 12, 2)->nullable()->comment('实付金额(线下)');
-            $table->timestamp('paid_at')->nullable()->comment('支付时间');
-            $table->timestamp('completed_at')->nullable()->comment('完成/核销时间');
-            $table->timestamps();
+            $table->timestamp('paid_at')->nullable()->comment('支付时间(北京时间)');
+            $table->timestamp('completed_at')->nullable()->comment('完成/核销时间(北京时间)');
+            $table->timestamps();// 创建时间、更新时间(北京时间)
 
             $table->foreign('user_id')->references('id')->on('users');// 用户ID外键
             $table->foreign('product_id')->references('id')->on('products');// 商品ID外键

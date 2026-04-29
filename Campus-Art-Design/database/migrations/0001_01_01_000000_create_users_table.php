@@ -18,9 +18,9 @@ return new class extends Migration
             $table->string('email')->unique();// 邮箱
             $table->string('account')->unique();// 账号
             $table->string('phone')->unique();// 手机号
-            $table->timestamp('email_verified_at')->nullable();// 邮箱验证时间
+            $table->timestamp('email_verified_at')->nullable();// 邮箱验证时间(北京时间)
             $table->string('password');// 密码
-            $table->timestamps();// 创建时间 更新时间
+            $table->timestamps();// 创建时间、更新时间(北京时间)
         });
     }
 

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->integer('width')->nullable()->comment('图片宽度');
             $table->integer('height')->nullable()->comment('图片高度');
             $table->tinyInteger('is_deleted')->default(0)->comment('0:正常 1:逻辑删除');
-            $table->timestamps();
+            $table->timestamps();// 创建时间、更新时间(北京时间)
 
             $table->foreign('order_id')->references('id')->on('orders')->onDelete('cascade');// 订单ID外键
             $table->index('order_id', 'idx_order_order_id');// 订单ID索引

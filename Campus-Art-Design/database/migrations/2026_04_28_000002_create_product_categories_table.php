@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();// 主键
             $table->string('name', 50)->notNullable()->comment('分类名称');
             $table->integer('sort_order')->default(0)->comment('排序');
-            $table->timestamps();// 创建时间 更新时间
+            $table->timestamps();// 创建时间、更新时间(北京时间)
             $table->index('sort_order', 'idx_sort');// 排序索引
         });
     }
