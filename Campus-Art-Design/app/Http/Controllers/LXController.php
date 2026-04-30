@@ -21,7 +21,7 @@ class LXController extends \Illuminate\Routing\Controller
                 'email' => 'required|string|email|max:255|unique:users',
                 'account' => 'required|string|max:255|unique:users',
                 'phone' => 'nullable|string|max:20',
-                'password' => 'required|string|min:8|confirmed',
+                'password' => ['required', 'string', 'min:6', 'confirmed', 'regex:/^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]+$/'],
                 'verification_code' => 'required|string|size:6',
             ]);
 
