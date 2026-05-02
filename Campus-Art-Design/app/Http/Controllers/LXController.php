@@ -51,6 +51,7 @@ class LXController extends \Illuminate\Routing\Controller
                 'account' => $request->account,
                 'phone' => $request->phone,
                 'password' => Hash::make($request->password),
+                'email_verified_at' => now(),
             ]);
 
             return response()->json([
@@ -58,7 +59,7 @@ class LXController extends \Illuminate\Routing\Controller
                 'data' => [
                     'user' => $user,
                 ],
-            ], 201);
+            ], 200);
         } catch (ValidationException $e) {
             return response()->json([
                 'message' => '验证失败',
@@ -73,10 +74,22 @@ class LXController extends \Illuminate\Routing\Controller
             $validated = $request->validate([
                 'email' => 'required|string|email|max:255',
                 'type' => 'required|string|in:register,reset_password,delete_account,bind_email,change_email',
+                //验证码类型，比如注册、重置密码、注销账户、绑定邮箱、修改邮箱
             ]);
 
             $email = $request->email;
             $type = $request->type;
+
+            // 验证邮箱域名是否有效
+            $emailDomain = substr(strrchr($email, '@'), 1);
+            if (!checkdnsrr($emailDomain, 'MX')) {
+                return response()->json([
+                    'message' => '请输入正确的邮箱',
+                    'errors' => [
+                        'email' => ['请输入正确的邮箱，该邮箱域名不存在']
+                    ]
+                ], 422);
+            }
 
             $allowedTypes = [
                 'register' => '注册',
@@ -156,20 +169,17 @@ class LXController extends \Illuminate\Routing\Controller
     {
         try {
             $validated = $request->validate([
-                'login' => 'required|string',
+                'email' => 'required|string|email',
                 'password' => 'required|string',
             ]);
 
-            $loginField = filter_var($request->login, FILTER_VALIDATE_EMAIL) ? 'email' : 
-                          (preg_match('/^1[3-9]\d{9}$/', $request->login) ? 'phone' : 'account');
-
-            $user = User::where($loginField, $request->login)->first();
+            $user = User::where('email', $request->email)->first();
 
             if (!$user || !Hash::check($request->password, $user->password)) {
                 return response()->json([
                     'message' => '登录失败',
                     'errors' => [
-                        'login' => ['邮箱、账户名或密码错误']
+                        'email' => ['邮箱或密码错误']
                     ]
                 ], 401);
             }
