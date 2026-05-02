@@ -52,6 +52,7 @@ class LXController extends \Illuminate\Routing\Controller
                 'phone' => $request->phone,
                 'password' => Hash::make($request->password),
                 'email_verified_at' => now(),
+                'role' => 'user',
             ]);
 
             return response()->json([

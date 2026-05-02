@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('phone')->unique();// 手机号
             $table->timestamp('email_verified_at')->nullable();// 邮箱验证时间(北京时间)
             $table->string('password');// 密码
+            $table->enum('role', ['user', 'admin'])->default('user')->comment('角色: user普通用户, admin管理员');// 角色
             $table->timestamps();// 创建时间、更新时间(北京时间)
         });
     }
