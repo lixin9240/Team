@@ -10,4 +10,7 @@ Route::post('/send-verification-code', [LXController::class, 'sendVerificationCo
 Route::middleware('auth:api')->group(function () {
     Route::post('/logout', [LXController::class, 'logout']);//注销接口
     Route::get('/me', [LXController::class, 'me']);//获取用户信息接口
+    
+    // 商品批量导入接口
+    Route::post('/products/import', [LXController::class, 'importProducts']);//批量导入商品
 });

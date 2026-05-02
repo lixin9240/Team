@@ -35,6 +35,24 @@ class User extends Authenticatable implements JWTSubject
         ];
     }
 
+    /**
+     * 禁用 remember_token 功能，返回 null
+     */
+    public function getRememberToken()
+    {
+        return null;
+    }
+
+    public function setRememberToken($value)
+    {
+        // 不执行任何操作
+    }
+
+    public function getRememberTokenName()
+    {
+        return null;
+    }
+
     public function orders()
     {
         return $this->hasMany(Order::class);
