@@ -820,4 +820,339 @@ class LXController extends \Illuminate\Routing\Controller
             ], 500);
         }
     }
+
+    /**
+     * 我的订单 - 查看个人所有预订记录
+     * GET /api/my-orders
+     */
+    public function myOrders(Request $request): JsonResponse
+    {
+        try {
+            $user = auth('api')->user();
+            if (!$user) {
+                return response()->json([
+                    'code' => 401,
+                    'message' => '请先登录',
+                ], 401);
+            }
+
+            // 构建查询
+            $query = Order::with(['product', 'attachments'])
+                ->where('user_id', $user->id);
+
+            // 按状态筛选
+            if ($request->filled('status')) {
+                $query->where('status', $request->status);
+            }
+
+            // 按设计状态筛选
+            if ($request->filled('design_status')) {
+                $query->where('design_status', $request->design_status);
+            }
+
+            // 按时间范围筛选
+            if ($request->filled('start_date')) {
+                $query->whereDate('created_at', '>=', $request->start_date);
+            }
+            if ($request->filled('end_date')) {
+                $query->whereDate('created_at', '<=', $request->end_date);
+            }
+
+            // 排序：按时间倒序
+            $query->orderBy('created_at', 'desc');
+
+            // 分页
+            $perPage = $request->get('per_page', 10);
+            $orders = $query->paginate($perPage);
+
+            // 状态聚合统计
+            $statusStats = [
+                'pending' => Order::where('user_id', $user->id)->where('status', 'pending')->count(),
+                'paid' => Order::where('user_id', $user->id)->where('status', 'paid')->count(),
+                'designing' => Order::where('user_id', $user->id)->where('status', 'designing')->count(),
+                'producing' => Order::where('user_id', $user->id)->where('status', 'producing')->count(),
+                'shipped' => Order::where('user_id', $user->id)->where('status', 'shipped')->count(),
+                'completed' => Order::where('user_id', $user->id)->where('status', 'completed')->count(),
+                'cancelled' => Order::where('user_id', $user->id)->where('status', 'cancelled')->count(),
+            ];
+
+            // 处理订单数据
+            $list = $orders->through(function ($order) {
+                return [
+                    'id' => $order->id,
+                    'order_no' => $order->order_no,
+                    'product_id' => $order->product_id,
+                    'product_name' => $order->product?->name,
+                    'product_type' => $order->product?->type,
+                    'product_cover' => $order->product?->cover_url,
+                    'quantity' => $order->quantity,
+                    'total_price' => $order->total_price,
+                    'size_pref' => $order->size_pref,
+                    'color_pref' => $order->color_pref,
+                    'remark' => $order->remark,
+                    'status' => $order->status,
+                    'status_label' => $this->getOrderStatusLabel($order->status),
+                    'design_status' => $order->design_status,
+                    'design_status_label' => $this->getDesignStatusLabel($order->design_status),
+                    'design_files' => $order->attachments->where('is_deleted', 0)->map(function ($file) {
+                        return [
+                            'file_url' => $file->file_url,
+                            'file_name' => $file->file_name,
+                        ];
+                    }),
+                    'paid_amount' => $order->paid_amount,
+                    'paid_at' => $order->paid_at?->setTimezone('Asia/Shanghai')?->format('Y-m-d H:i:s'),
+                    'completed_at' => $order->completed_at?->setTimezone('Asia/Shanghai')?->format('Y-m-d H:i:s'),
+                    'created_at' => $order->created_at?->setTimezone('Asia/Shanghai')?->format('Y-m-d H:i:s'),
+                    'updated_at' => $order->updated_at?->setTimezone('Asia/Shanghai')?->format('Y-m-d H:i:s'),
+                ];
+            });
+
+            return response()->json([
+                'code' => 200,
+                'message' => '获取订单列表成功',
+                'data' => [
+                    'list' => $list->items(),
+                    'pagination' => [
+                        'current_page' => $orders->currentPage(),
+                        'per_page' => $orders->perPage(),
+                        'total' => $orders->total(),
+                        'last_page' => $orders->lastPage(),
+                    ],
+                    'status_stats' => $statusStats,
+                ],
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'code' => 500,
+                'message' => '获取订单列表失败：' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * 商品维护 - 管理员修改商品信息
+     * PUT /api/products/{id}
+     */
+    public function updateProduct(Request $request, int $id): JsonResponse
+    {
+        try {
+            // 验证管理员权限
+            $operator = auth('api')->user();
+            if (!$operator || $operator->role !== 'admin') {
+                return response()->json([
+                    'code' => 403,
+                    'message' => '无权限操作',
+                ], 403);
+            }
+
+            // 验证请求数据
+            $validator = Validator::make($request->all(), [
+                'name' => 'nullable|string|max:200',
+                'category_id' => 'nullable|integer|exists:product_categories,id',
+                'type' => 'nullable|in:文创,物料',
+                'spec' => 'nullable|string|max:500',
+                'price' => 'nullable|numeric|min:0',
+                'stock' => 'nullable|integer|min:0',
+                'custom_rule' => 'nullable|string',
+                'status' => 'nullable|in:0,1,2',
+                'cover_url' => 'nullable|string|max:500',
+            ], [
+                'category_id.exists' => '分类不存在',
+                'type.in' => '类型必须是"文创"或"物料"',
+                'status.in' => '状态必须是0(下架)、1(上架)或2(售罄)',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'code' => 422,
+                    'message' => '参数验证失败',
+                    'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            // 查询商品
+            $product = Product::find($id);
+            if (!$product) {
+                return response()->json([
+                    'code' => 404,
+                    'message' => '商品不存在',
+                ], 404);
+            }
+
+            // 检查是否有进行中的订单
+            $hasPendingOrders = Order::where('product_id', $id)
+                ->whereIn('status', ['pending', 'paid', 'designing', 'producing'])
+                ->exists();
+
+            if ($hasPendingOrders && $request->has('status') && $request->status == 0) {
+                return response()->json([
+                    'code' => 422,
+                    'message' => '该商品有进行中的订单，无法下架',
+                ], 422);
+            }
+
+            DB::beginTransaction();
+
+            try {
+                // 使用乐观锁更新
+                $currentVersion = $product->version;
+                $updates = [];
+                $logFields = [];
+
+                // 收集需要更新的字段
+                $fields = ['name', 'category_id', 'type', 'spec', 'price', 'stock', 'custom_rule', 'status', 'cover_url'];
+                foreach ($fields as $field) {
+                    if ($request->has($field)) {
+                        $oldValue = $product->$field;
+                        $newValue = $request->$field;
+                        if ($oldValue != $newValue) {
+                            $updates[$field] = $newValue;
+                            $logFields[] = "{$field}({$oldValue}->{$newValue})";
+                        }
+                    }
+                }
+
+                if (empty($updates)) {
+                    return response()->json([
+                        'code' => 200,
+                        'message' => '没有需要更新的字段',
+                        'data' => [
+                            'product_id' => $product->id,
+                        ],
+                    ]);
+                }
+
+                // 乐观锁更新
+                $updates['version'] = $currentVersion + 1;
+                $affected = Product::where('id', $id)
+                    ->where('version', $currentVersion)
+                    ->update($updates);
+
+                if ($affected === 0) {
+                    throw new \Exception('商品信息已被其他管理员修改，请刷新后重试');
+                }
+
+                // 记录操作日志
+                AuditLog::create([
+                    'order_id' => null,
+                    'operator_id' => $operator->id,
+                    'action' => '修改商品:' . implode(',', $logFields),
+                    'from_status' => '',
+                    'to_status' => '',
+                    'remark' => $request->remark ?? '',
+                ]);
+
+                DB::commit();
+
+                return response()->json([
+                    'code' => 200,
+                    'message' => '商品更新成功',
+                    'data' => [
+                        'product_id' => $id,
+                        'updates' => $updates,
+                    ],
+                ]);
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'code' => 500,
+                'message' => '更新失败：' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * 数据看板 - 系统核心指标
+     * GET /api/admin/stats
+     */
+    public function adminStats(Request $request): JsonResponse
+    {
+        try {
+            // 验证管理员权限
+            $operator = auth('api')->user();
+            if (!$operator || $operator->role !== 'admin') {
+                return response()->json([
+                    'code' => 403,
+                    'message' => '无权限访问',
+                ], 403);
+            }
+
+            // 今日预订量
+            $todayOrders = Order::whereDate('created_at', today())->count();
+            $todayAmount = Order::whereDate('created_at', today())->sum('total_price');
+
+            // 待审核数（设计状态为已上传）
+            $pendingReviewCount = Order::where('design_status', 2)->count();
+
+            // 各状态订单统计
+            $orderStats = [
+                'pending' => Order::where('status', 'pending')->count(),
+                'paid' => Order::where('status', 'paid')->count(),
+                'designing' => Order::where('status', 'designing')->count(),
+                'producing' => Order::where('status', 'producing')->count(),
+                'shipped' => Order::where('status', 'shipped')->count(),
+                'completed' => Order::where('status', 'completed')->count(),
+            ];
+
+            // 库存预警商品列表
+            $stockWarningProducts = Product::with('category')
+                ->whereRaw('stock - reserved_qty < 50')
+                ->where('status', 1)
+                ->orderByRaw('stock - reserved_qty')
+                ->limit(10)
+                ->get()
+                ->map(function ($product) {
+                    $availableStock = $product->stock - $product->reserved_qty;
+                    return [
+                        'id' => $product->id,
+                        'name' => $product->name,
+                        'category_name' => $product->category?->name,
+                        'type' => $product->type,
+                        'stock' => $product->stock,
+                        'reserved_qty' => $product->reserved_qty,
+                        'available_stock' => $availableStock,
+                        'warning_level' => $availableStock <= 0 ? 'critical' : ($availableStock < 10 ? 'high' : 'medium'),
+                    ];
+                });
+
+            // 最近7天订单趋势
+            $weeklyTrend = [];
+            for ($i = 6; $i >= 0; $i--) {
+                $date = now()->subDays($i);
+                $weeklyTrend[] = [
+                    'date' => $date->format('m-d'),
+                    'count' => Order::whereDate('created_at', $date)->count(),
+                    'amount' => Order::whereDate('created_at', $date)->sum('total_price'),
+                ];
+            }
+
+            return response()->json([
+                'code' => 200,
+                'message' => '获取统计数据成功',
+                'data' => [
+                    'today' => [
+                        'orders_count' => $todayOrders,
+                        'orders_amount' => $todayAmount,
+                    ],
+                    'pending_review' => $pendingReviewCount,
+                    'order_stats' => $orderStats,
+                    'stock_warning_products' => $stockWarningProducts,
+                    'weekly_trend' => $weeklyTrend,
+                ],
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'code' => 500,
+                'message' => '获取统计数据失败：' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }
