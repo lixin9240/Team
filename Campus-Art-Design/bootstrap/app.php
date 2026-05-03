@@ -12,7 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // 配置认证中间件，API认证失败时返回JSON而不是重定向
+        $middleware->redirectGuestsTo(fn () => null);
+        $middleware->redirectUsersTo(fn () => '/');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

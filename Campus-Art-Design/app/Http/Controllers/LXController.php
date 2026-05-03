@@ -202,7 +202,17 @@ class LXController extends \Illuminate\Routing\Controller
             return response()->json([
                 'message' => '登录成功',
                 'data' => [
-                    'user' => $user,
+                    'user' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'account' => $user->account,
+                        'phone' => $user->phone,
+                        'role' => $user->role,
+                        'email_verified_at' => $user->email_verified_at?->setTimezone('Asia/Shanghai')?->format('Y-m-d H:i:s'),
+                        'created_at' => $user->created_at?->setTimezone('Asia/Shanghai')?->format('Y-m-d H:i:s'),
+                        'updated_at' => $user->updated_at?->setTimezone('Asia/Shanghai')?->format('Y-m-d H:i:s'),
+                    ],
                     'token' => $token,
                 ],
             ]);

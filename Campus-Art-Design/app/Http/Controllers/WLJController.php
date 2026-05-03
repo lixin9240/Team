@@ -22,30 +22,30 @@ class WLJController extends \Illuminate\Routing\Controller
             $query = Product::query();
 
             // 按分类筛选
-            if ($request->has('category_id')) {
+            if ($request->filled('category_id')) {
                 $query->where('category_id', $request->category_id);
             }
 
             // 按状态筛选
-            if ($request->has('status')) {
+            if ($request->filled('status')) {
                 $query->where('status', $request->status);
             }
 
             // 按价格区间筛选
-            if ($request->has('min_price')) {
+            if ($request->filled('min_price')) {
                 $query->where('price', '>=', $request->min_price);
             }
-            if ($request->has('max_price')) {
+            if ($request->filled('max_price')) {
                 $query->where('price', '<=', $request->max_price);
             }
 
             // 关键词搜索（商品名称模糊匹配）
-            if ($request->has('keyword')) {
+            if ($request->filled('keyword')) {
                 $query->where('name', 'like', '%' . $request->keyword . '%');
             }
 
             // 按类型筛选（文创/物料）
-            if ($request->has('type')) {
+            if ($request->filled('type')) {
                 $query->where('type', $request->type);
             }
 
@@ -59,7 +59,7 @@ class WLJController extends \Illuminate\Routing\Controller
             $products = $query->with('category')->paginate($perPage);
 
             // 处理响应数据（添加库存预警标签）
-            $data = $products->through(function ($product) {
+            $list = $products->through(function ($product) {
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
@@ -80,6 +80,17 @@ class WLJController extends \Illuminate\Routing\Controller
                     'updated_at' => $product->updated_at,
                 ];
             });
+
+            // 简化分页数据结构
+            $data = [
+                'list' => $list->items(),
+                'pagination' => [
+                    'current_page' => $products->currentPage(),
+                    'per_page' => $products->perPage(),
+                    'total' => $products->total(),
+                    'last_page' => $products->lastPage(),
+                ],
+            ];
 
             return response()->json([
                 'code' => 200,
