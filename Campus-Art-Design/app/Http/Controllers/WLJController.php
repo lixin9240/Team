@@ -187,8 +187,8 @@ class WLJController extends \Illuminate\Routing\Controller
                     'cover_url' => $product->cover_url,
                     'custom_rule' => $product->custom_rule,
                     'stock_warning' => $this->getStockWarning($product),
-                    'created_at' => $product->created_at,
-                    'updated_at' => $product->updated_at,
+                    'created_at' => $product->created_at?->setTimezone('Asia/Shanghai')?->format('Y-m-d H:i:s'),
+                    'updated_at' => $product->updated_at?->setTimezone('Asia/Shanghai')?->format('Y-m-d H:i:s'),
                 ],
             ]);
 
@@ -274,8 +274,12 @@ class WLJController extends \Illuminate\Routing\Controller
                             throw new \Exception('OPTIMISTIC_LOCK_CONFLICT');
                         }
 
+                        // 生成订单编号：M + 北京时间年月日时分秒 + 4位随机数
+                        $orderNo = 'M' . now()->setTimezone('Asia/Shanghai')->format('YmdHis') . str_pad(random_int(0, 9999), 4, '0', STR_PAD_LEFT);
+
                         // 创建订单
                         $order = Order::create([
+                            'order_no' => $orderNo,
                             'user_id' => $user->id,
                             'product_id' => $productId,
                             'quantity' => $quantity,
