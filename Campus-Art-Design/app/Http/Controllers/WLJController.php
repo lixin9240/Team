@@ -277,6 +277,9 @@ class WLJController extends \Illuminate\Routing\Controller
                         // 生成订单编号：M + 北京时间年月日时分秒 + 4位随机数
                         $orderNo = 'M' . now()->setTimezone('Asia/Shanghai')->format('YmdHis') . str_pad(random_int(0, 9999), 4, '0', STR_PAD_LEFT);
 
+                        // 判断是否需要定制：如果商品有定制要求说明，则需要上传设计稿
+                        $designStatus = $product->custom_rule ? 1 : 0; // 1=待上传, 0=无需定制
+
                         // 创建订单
                         $order = Order::create([
                             'order_no' => $orderNo,
@@ -288,6 +291,7 @@ class WLJController extends \Illuminate\Routing\Controller
                             'color_pref' => $request->color_pref,
                             'remark' => $request->remark,
                             'status' => 'pending', // 待处理
+                            'design_status' => $designStatus,
                         ]);
 
                         return $order;
