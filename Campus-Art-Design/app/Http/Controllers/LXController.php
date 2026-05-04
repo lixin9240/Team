@@ -331,7 +331,8 @@ class LXController extends \Illuminate\Routing\Controller
                     '规格' => $row[5] ?? $row['规格'] ?? null,
                     '定制要求' => $row[6] ?? $row['定制要求'] ?? null,
                     '支持定制' => $row[7] ?? $row['支持定制'] ?? null,
-                    '状态' => $row[8] ?? $row['状态'] ?? '上架',
+                    '封面图URL' => $row[8] ?? $row['封面图URL'] ?? null,
+                    '状态' => $row[9] ?? $row['状态'] ?? '上架',
                 ];
 
                 // 行级校验
@@ -343,7 +344,8 @@ class LXController extends \Illuminate\Routing\Controller
                     '库存' => 'required|integer|min:0',
                     '规格' => 'nullable|string|max:500',
                     '定制要求' => 'nullable|string',
-                    '支持定制' => 'nullable|boolean',
+                    '支持定制' => 'nullable|string', // 支持"是"/"否"字符串
+                    '封面图URL' => 'nullable|string|max:500',
                     '状态' => 'nullable|in:上架,下架,已售罄',
                 ], [
                     '商品名称.required' => '商品名称不能为空',
@@ -391,6 +393,7 @@ class LXController extends \Illuminate\Routing\Controller
                             'reserved_qty' => 0,
                             'custom_rule' => $rowData['定制要求'] ?? null,
                             'is_customizable' => $isCustomizable,
+                            'cover_url' => $rowData['封面图URL'] ?? null,
                             'status' => $status,
                             'version' => 0,
                         ]
@@ -444,36 +447,23 @@ class LXController extends \Illuminate\Routing\Controller
 
     /**
      * 转换是否支持定制
+     * 支持格式：是/否、1/0、true/false、yes/no
      */
     private function convertIsCustomizable(string|int|null $value): bool
     {
+        if (is_null($value) || $value === '') {
+            return false; // 默认为不支持定制
+        }
+        
         if (is_numeric($value)) {
             return (int)$value === 1;
         }
         
         if (is_string($value)) {
             $value = trim($value);
-            return in_array($value, ['是', '支持', 'Y', 'Yes', 'yes', '1', 'true', 'TRUE'], true);
-        }
-        
-        return false;
-    }
-
-    /**
-     * 转换是否支持定制
-     */
-    /**
-     * 判断是否支持定制
-     */
-    private function isCustomizable(string|int|null $value): bool
-    {
-        if (is_numeric($value)) {
-            return (int)$value === 1;
-        }
-        
-        if (is_string($value)) {
-            $value = trim($value);
-            return in_array($value, ['是', '支持', 'Y', 'Yes', 'yes', '1', 'true', 'TRUE'], true);
+            // 支持"是"表示支持定制
+            $trueValues = ['是', '支持', 'Y', 'Yes', 'yes', '1', 'true', 'TRUE', '真', '对'];
+            return in_array($value, $trueValues, true);
         }
         
         return false;
