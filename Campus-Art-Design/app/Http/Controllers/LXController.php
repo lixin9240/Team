@@ -343,8 +343,8 @@ class LXController extends \Illuminate\Routing\Controller
                     '库存' => 'required|integer|min:0',
                     '规格' => 'nullable|string|max:500',
                     '定制要求' => 'nullable|string',
-                    '支持定制' => 'nullable',
-                    '状态' => 'nullable',
+                    '支持定制' => 'nullable|boolean',
+                    '状态' => 'nullable|in:上架,下架,已售罄',
                 ], [
                     '商品名称.required' => '商品名称不能为空',
                     '分类名称.required' => '分类名称不能为空',
