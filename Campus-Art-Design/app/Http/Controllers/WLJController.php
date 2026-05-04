@@ -75,6 +75,7 @@ class WLJController extends \Illuminate\Routing\Controller
                     'status_label' => $this->getStatusLabel($product->status),//状态标签
                     'cover_url' => $product->cover_url,
                     'custom_rule' => $product->custom_rule,//自定义规则
+                    'is_customizable' => $product->is_customizable,//是否支持定制
                     'stock_warning' => $this->getStockWarning($product), // 库存预警
                     'created_at' => $product->created_at,
                     'updated_at' => $product->updated_at,
@@ -186,6 +187,7 @@ class WLJController extends \Illuminate\Routing\Controller
                     'status_label' => $this->getStatusLabel($product->status),
                     'cover_url' => $product->cover_url,
                     'custom_rule' => $product->custom_rule,
+                    'is_customizable' => $product->is_customizable,
                     'stock_warning' => $this->getStockWarning($product),
                     'created_at' => $product->created_at?->setTimezone('Asia/Shanghai')?->format('Y-m-d H:i:s'),
                     'updated_at' => $product->updated_at?->setTimezone('Asia/Shanghai')?->format('Y-m-d H:i:s'),
@@ -277,8 +279,8 @@ class WLJController extends \Illuminate\Routing\Controller
                         // 生成订单编号：M + 北京时间年月日时分秒 + 4位随机数
                         $orderNo = 'M' . now()->setTimezone('Asia/Shanghai')->format('YmdHis') . str_pad(random_int(0, 9999), 4, '0', STR_PAD_LEFT);
 
-                        // 判断是否需要定制：如果商品有定制要求说明，则需要上传设计稿
-                        $designStatus = $product->custom_rule ? 1 : 0; // 1=待上传, 0=无需定制
+                        // 判断是否需要定制：根据商品 is_customizable 字段
+                        $designStatus = $product->is_customizable ? 1 : 0; // 1=待上传, 0=无需定制
 
                         // 创建订单
                         $order = Order::create([

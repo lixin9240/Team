@@ -330,7 +330,8 @@ class LXController extends \Illuminate\Routing\Controller
                     '库存' => $row[4] ?? $row['库存'] ?? null,
                     '规格' => $row[5] ?? $row['规格'] ?? null,
                     '定制要求' => $row[6] ?? $row['定制要求'] ?? null,
-                    '状态' => $row[7] ?? $row['状态'] ?? '上架',
+                    '支持定制' => $row[7] ?? $row['支持定制'] ?? null,
+                    '状态' => $row[8] ?? $row['状态'] ?? '上架',
                 ];
 
                 // 行级校验
@@ -342,6 +343,7 @@ class LXController extends \Illuminate\Routing\Controller
                     '库存' => 'required|integer|min:0',
                     '规格' => 'nullable|string|max:500',
                     '定制要求' => 'nullable|string',
+                    '支持定制' => 'nullable',
                     '状态' => 'nullable',
                 ], [
                     '商品名称.required' => '商品名称不能为空',
@@ -374,6 +376,9 @@ class LXController extends \Illuminate\Routing\Controller
                         ['name' => $rowData['分类名称']]
                     );
 
+                    // 判断是否支持定制
+                    $isCustomizable = $this->convertIsCustomizable($rowData['支持定制']);
+
                     // 创建或更新商品
                     Product::updateOrCreate(
                         ['name' => $rowData['商品名称']],
@@ -385,6 +390,7 @@ class LXController extends \Illuminate\Routing\Controller
                             'stock' => $rowData['库存'],
                             'reserved_qty' => 0,
                             'custom_rule' => $rowData['定制要求'] ?? null,
+                            'is_customizable' => $isCustomizable,
                             'status' => $status,
                             'version' => 0,
                         ]
@@ -434,6 +440,43 @@ class LXController extends \Illuminate\Routing\Controller
             '售罄' => 2,
             default => 1,
         };
+    }
+
+    /**
+     * 转换是否支持定制
+     */
+    private function convertIsCustomizable(string|int|null $value): bool
+    {
+        if (is_numeric($value)) {
+            return (int)$value === 1;
+        }
+        
+        if (is_string($value)) {
+            $value = trim($value);
+            return in_array($value, ['是', '支持', 'Y', 'Yes', 'yes', '1', 'true', 'TRUE'], true);
+        }
+        
+        return false;
+    }
+
+    /**
+     * 转换是否支持定制
+     */
+    /**
+     * 判断是否支持定制
+     */
+    private function isCustomizable(string|int|null $value): bool
+    {
+        if (is_numeric($value)) {
+            return (int)$value === 1;
+        }
+        
+        if (is_string($value)) {
+            $value = trim($value);
+            return in_array($value, ['是', '支持', 'Y', 'Yes', 'yes', '1', 'true', 'TRUE'], true);
+        }
+        
+        return false;
     }
 
     /**
@@ -956,11 +999,13 @@ class LXController extends \Illuminate\Routing\Controller
                 'price' => 'nullable|numeric|min:0',
                 'stock' => 'nullable|integer|min:0',
                 'custom_rule' => 'nullable|string',
+                'is_customizable' => 'nullable|boolean',
                 'status' => 'nullable|in:0,1,2',
                 'cover_url' => 'nullable|string|max:500',
             ], [
                 'category_id.exists' => '分类不存在',
                 'type.in' => '类型必须是"文创"或"物料"',
+                'is_customizable.boolean' => '是否支持定制必须是布尔值',
                 'status.in' => '状态必须是0(下架)、1(上架)或2(售罄)',
             ]);
 
@@ -1002,7 +1047,7 @@ class LXController extends \Illuminate\Routing\Controller
                 $logFields = [];
 
                 // 收集需要更新的字段
-                $fields = ['name', 'category_id', 'type', 'spec', 'price', 'stock', 'custom_rule', 'status', 'cover_url'];
+                $fields = ['name', 'category_id', 'type', 'spec', 'price', 'stock', 'custom_rule', 'is_customizable', 'status', 'cover_url'];
                 foreach ($fields as $field) {
                     if ($request->has($field)) {
                         $oldValue = $product->$field;
