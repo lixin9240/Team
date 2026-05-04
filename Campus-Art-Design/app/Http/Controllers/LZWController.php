@@ -15,29 +15,28 @@ use Illuminate\Support\Str;
 class LZWController extends \Illuminate\Routing\Controller
 {
     /**
-     * 允许上传的文件类型白名单
+     * 允许上传的文件类型白名单（根据OSS规范）
      */
     private array $allowedMimeTypes = [
         'image/jpeg',
         'image/png',
-        'image/gif',
-        'image/webp',
         'application/pdf',
-        'application/zip',
-        'application/x-zip-compressed',
+        'application/postscript', // .ai 文件
+        'image/vnd.adobe.photoshop', // .psd 文件
+        'application/octet-stream', // 某些设计软件文件
     ];
 
     /**
-     * 允许上传的文件扩展名白名单
+     * 允许上传的文件扩展名白名单（根据OSS规范）
      */
     private array $allowedExtensions = [
-        'jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf', 'zip',
+        'jpg', 'jpeg', 'png', 'pdf', 'ai', 'psd',
     ];
 
     /**
-     * 最大文件大小（10MB）
+     * 最大文件大小（15MB，根据OSS规范）
      */
-    private int $maxFileSize = 10 * 1024 * 1024;
+    private int $maxFileSize = 15 * 1024 * 1024;
 
     /**
      * 上传定制稿 - 为已提交订单上传设计稿/图案
