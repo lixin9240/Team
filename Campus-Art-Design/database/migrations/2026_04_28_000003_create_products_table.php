@@ -23,7 +23,6 @@ return new class extends Migration
             $table->integer('version')->notNullable()->default(0)->comment('乐观锁版本号');
             $table->timestamps();// 创建时间、更新时间(北京时间)
 
-            $table->foreign('category_id')->references('id')->on('product_categories');// 分类ID外键
             $table->index(['category_id', 'status'], 'idx_category_status');// 分类ID和状态索引
             $table->index('price', 'idx_price');// 单价索引
             $table->index(['status', 'type'], 'idx_status_type');// 状态和类型索引
