@@ -12,6 +12,7 @@ class OssService
     private string $endpoint;
     private string $cdnDomain;
     private bool $ssl;
+    private bool $isCname;
 
     public function __construct()
     {
@@ -19,6 +20,7 @@ class OssService
         $this->endpoint = config('filesystems.disks.oss.endpoint');
         $this->cdnDomain = config('filesystems.disks.oss.cdn_domain', '');
         $this->ssl = config('filesystems.disks.oss.ssl', true);
+        $this->isCname = config('filesystems.disks.oss.is_cname', false);
 
         $accessKeyId = config('filesystems.disks.oss.access_id');
         $accessKeySecret = config('filesystems.disks.oss.access_key');
@@ -29,7 +31,9 @@ class OssService
                     $accessKeyId,
                     $accessKeySecret,
                     $this->endpoint,
-                    $this->ssl
+                    $this->ssl,
+                    null,
+                    $this->isCname
                 );
             } catch (OssException $e) {
                 throw new \RuntimeException('OSS客户端初始化失败: ' . $e->getMessage());
@@ -63,10 +67,23 @@ class OssService
             throw new \RuntimeException('OSS客户端未初始化');
         }
 
+        // 调试日志
+        \Illuminate\Support\Facades\Log::info('OSS上传调试', [
+            'bucket' => $this->bucket,
+            'endpoint' => $this->endpoint,
+            'object' => $object,
+            'content_length' => strlen($content),
+        ]);
+
         try {
             $this->client->putObject($this->bucket, $object, $content, $options);
             return true;
         } catch (OssException $e) {
+            \Illuminate\Support\Facades\Log::error('OSS上传失败', [
+                'error' => $e->getMessage(),
+                'error_code' => $e->getErrorCode(),
+                'request_id' => $e->getRequestId(),
+            ]);
             throw new \RuntimeException('OSS上传失败: ' . $e->getMessage());
         }
     }

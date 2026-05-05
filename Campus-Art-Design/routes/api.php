@@ -5,6 +5,55 @@ use App\Http\Controllers\LXController;
 use App\Http\Controllers\WLJController;
 use App\Http\Controllers\LZWController;
 
+// OSS配置测试路由（无需认证）
+Route::get('/test-oss-config', function () {
+    return response()->json([
+        'bucket' => config('filesystems.disks.oss.bucket'),
+        'endpoint' => config('filesystems.disks.oss.endpoint'),
+        'access_id' => substr(config('filesystems.disks.oss.access_id'), 0, 10) . '...',
+        'has_access_key' => !empty(config('filesystems.disks.oss.access_key')),
+    ]);
+});
+
+// OSS连接测试路由（无需认证）
+Route::get('/test-oss-connection', function () {
+    try {
+        $ossService = app(\App\Services\OssService::class);
+        
+        // 尝试获取一个测试文件的URL来验证连接
+        $testUrl = $ossService->url('test.txt');
+        
+        return response()->json([
+            'status' => 'success',
+            'message' => 'OSS服务初始化成功',
+            'test_url' => $testUrl,
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage(),
+            'error_code' => $e->getCode(),
+        ], 500);
+    }
+});
+
+// OSS完整配置调试路由（无需认证）
+Route::get('/debug-oss', function () {
+    $config = config('filesystems.disks.oss');
+    
+    return response()->json([
+        'driver' => $config['driver'] ?? null,
+        'access_id' => isset($config['access_id']) ? substr($config['access_id'], 0, 10) . '...' : null,
+        'access_key' => isset($config['access_key']) ? '已设置(长度:' . strlen($config['access_key']) . ')' : null,
+        'bucket' => $config['bucket'] ?? null,
+        'endpoint' => $config['endpoint'] ?? null,
+        'cdn_domain' => $config['cdn_domain'] ?? null,
+        'ssl' => $config['ssl'] ?? null,
+        'is_cname' => $config['is_cname'] ?? null,
+        'debug' => $config['debug'] ?? null,
+    ]);
+});
+
 Route::post('/register', [LXController::class, 'register']);//注册接口
 Route::post('/login', [LXController::class, 'login']);//登录接口
 Route::post('/send-verification-code', [LXController::class, 'sendVerificationCode']);//发送验证码接口
