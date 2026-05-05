@@ -77,8 +77,8 @@ class WLJController extends \Illuminate\Routing\Controller
                     'custom_rule' => $product->custom_rule,//自定义规则
                     'is_customizable' => $product->is_customizable,//是否支持定制
                     'stock_warning' => $this->getStockWarning($product), // 库存预警
-                    'created_at' => $product->created_at,
-                    'updated_at' => $product->updated_at,
+                    'created_at' => $product->created_at?->setTimezone('Asia/Shanghai')?->format('Y-m-d H:i:s'),
+                    'updated_at' => $product->updated_at?->setTimezone('Asia/Shanghai')?->format('Y-m-d H:i:s'),
                 ];
             });
 
