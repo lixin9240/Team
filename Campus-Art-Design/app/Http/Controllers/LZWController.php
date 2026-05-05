@@ -5,11 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\OrderAttachment;
 use App\Models\Product;
-use App\Services\OssService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class LZWController extends \Illuminate\Routing\Controller
@@ -137,24 +137,23 @@ class LZWController extends \Illuminate\Routing\Controller
             DB::beginTransaction();
 
             try {
-                // 生成文件名：{timestamp}_{uuid}.{ext}
+                // 生成文件名：order_{订单ID}_{时间戳}_{随机字符串}.{扩展名}
                 $fileName = sprintf(
-                    '%s_%s.%s',
+                    'order_%d_%s_%s.%s',
+                    $order->id,
                     now()->format('YmdHis'),
-                    Str::uuid()->toString(),
+                    Str::random(8),
                     $extension
                 );
 
-                // 存储路径：merch-designs/{order_id}/{timestamp}_{uuid}.{ext}
-                $ossPath = 'merch-designs/' . $order->id . '/' . $fileName;
+                // 上传路径：designs/2026/05/03/
+                $directory = 'designs/' . now()->format('Y/m/d');
                 
-                // 使用OSS上传文件
-                $ossService = new OssService();
-                $ossService->put($ossPath, file_get_contents($file->getPathname()));
-
-                // 获取OSS访问URL
-                // 注意：如果Bucket是私有的，需要通过临时签名URL访问
-                $fileUrl = $ossService->url($ossPath);
+                // 存储文件（使用本地存储，实际项目可改为OSS）
+                $filePath = $file->storeAs($directory, $fileName, 'public');
+                
+                // 生成访问URL
+                $fileUrl = asset('storage/' . $filePath);
 
                 // 保存附件记录
                 $attachment = OrderAttachment::create([
@@ -194,12 +193,9 @@ class LZWController extends \Illuminate\Routing\Controller
 
             } catch (\Exception $e) {
                 DB::rollBack();
-                // 删除已上传的OSS文件（生命周期管理）
-                if (isset($ossPath)) {
-                    $ossService = app(OssService::class);
-                    if ($ossService->exists($ossPath)) {
-                        $ossService->delete($ossPath);
-                    }
+                // 删除已上传的文件
+                if (isset($filePath) && Storage::disk('public')->exists($filePath)) {
+                    Storage::disk('public')->delete($filePath);
                 }
                 throw $e;
             }
