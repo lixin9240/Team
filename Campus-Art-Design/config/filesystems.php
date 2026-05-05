@@ -60,6 +60,23 @@ return [
             'report' => false,
         ],
 
+        'oss' => [
+            'driver' => 'oss',
+            'access_id' => env('OSS_ACCESS_KEY_ID'),
+            'access_key' => env('OSS_ACCESS_KEY_SECRET'),
+            'bucket' => env('OSS_BUCKET'),
+            'endpoint' => env('OSS_ENDPOINT'),
+            'cdn_domain' => env('OSS_CDN_DOMAIN'),
+            'ssl' => env('OSS_SSL', true),
+            'is_cname' => env('OSS_IS_CNAME', false),
+            'debug' => env('OSS_DEBUG', false),
+            // 临时签名URL配置（安全要求）
+            'temporary_url' => [
+                'enabled' => true,
+                'expiration' => 3600, // 默认1小时
+            ],
+        ],
+
     ],
 
     /*
