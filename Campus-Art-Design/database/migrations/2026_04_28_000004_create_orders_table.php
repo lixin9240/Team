@@ -25,6 +25,8 @@ return new class extends Migration
             $table->timestamp('completed_at')->nullable()->comment('完成/核销时间(北京时间)');
             $table->timestamps();// 创建时间、更新时间(北京时间)
 
+            $table->foreign('user_id')->references('id')->on('users');// 用户ID外键
+            $table->foreign('product_id')->references('id')->on('products');// 商品ID外键
             $table->index(['user_id', 'status'], 'idx_user_status');// 用户ID和状态索引
             $table->index(['product_id', 'status'], 'idx_product_status');// 商品ID和状态索引
             $table->index('status', 'idx_status');// 状态索引
