@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();// 主键
             $table->bigInteger('order_id')->unsigned()->nullable()->comment('订单ID，商品维护时为null');
             $table->bigInteger('operator_id')->unsigned()->notNullable()->comment('操作人ID');
-            $table->string('action', 50)->notNullable()->comment('操作类型');
+            $table->string('action', 255)->notNullable()->comment('操作类型');
             $table->string('from_status', 20)->nullable()->comment('原状态');
             $table->string('to_status', 20)->nullable()->comment('目标状态');
             $table->string('remark', 500)->nullable()->comment('操作备注');

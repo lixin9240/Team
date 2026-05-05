@@ -524,11 +524,11 @@ class LXController extends \Illuminate\Routing\Controller
             }
 
             // 按时间范围筛选
-            if ($request->has('start_date')) {
-                $query->whereDate('created_at', '>=', $request->start_date);
+            if ($request->has('start_date') && $request->start_date) {
+                $query->where('created_at', '>=', $request->start_date . ' 00:00:00');
             }
-            if ($request->has('end_date')) {
-                $query->whereDate('created_at', '<=', $request->end_date);
+            if ($request->has('end_date') && $request->end_date) {
+                $query->where('created_at', '<=', $request->end_date . ' 23:59:59');
             }
 
             // 关键词搜索（订单号）
@@ -633,6 +633,12 @@ class LXController extends \Illuminate\Routing\Controller
             return $response;
 
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('订单导出失败', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             return response()->json([
                 'code' => 500,
                 'message' => '导出失败：' . $e->getMessage(),
