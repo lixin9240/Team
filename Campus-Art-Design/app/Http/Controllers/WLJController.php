@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class WLJController extends \Illuminate\Routing\Controller
@@ -77,10 +78,12 @@ class WLJController extends \Illuminate\Routing\Controller
                 'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
+            Log::error('Order Store Error: ' . $e->getMessage() . ' | Line: ' . $e->getLine());
             return response()->json([
                 'code' => 500,
                 'message' => '服务器错误',
                 'error' => $e->getMessage(),
+                'line' => $e->getLine(),
             ], 500);
         }
     }
@@ -140,9 +143,7 @@ class WLJController extends \Illuminate\Routing\Controller
             }
 
             return DB::transaction(function () use ($request, $user) {
-                $product = Product::where('id', $request->product_id)
-                    ->lockForUpdate()
-                    ->first();
+                $product = Product::find($request->product_id);
 
                 if (!$product) {
                     return response()->json([
@@ -215,16 +216,19 @@ class WLJController extends \Illuminate\Routing\Controller
                 ], 201);
             });
         } catch (ValidationException $e) {
+            Log::error('Validation Error: ' . $e->getMessage());
             return response()->json([
                 'code' => 422,
                 'message' => '参数验证失败',
                 'errors' => $e->errors(),
             ], 422);
         } catch (\Exception $e) {
+            Log::error('Order Store Error: ' . $e->getMessage() . ' | Line: ' . $e->getLine());
             return response()->json([
                 'code' => 500,
                 'message' => '服务器错误',
                 'error' => $e->getMessage(),
+                'line' => $e->getLine(),
             ], 500);
         }
     }
