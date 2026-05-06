@@ -22,6 +22,7 @@ class Product extends Model
         'reserved_qty',
         'cover_url',
         'custom_rule',
+        'is_customizable',
         'status',
         'version',
     ];
@@ -32,6 +33,7 @@ class Product extends Model
             'price' => 'decimal:2',
             'stock' => 'integer',
             'reserved_qty' => 'integer',
+            'is_customizable' => 'boolean',
             'status' => 'integer',
             'version' => 'integer',
         ];
