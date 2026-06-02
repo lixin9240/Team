@@ -130,11 +130,16 @@ class Booking extends Model
 
     /**
      * 作用域：申请归还（待审核）
+     * 筛选出所有【用户已申请归还设备、等待管理员审核】的借用记录
      */
     public function scopeReturning($query)
     {
         return $query->where('status', self::STATUS_RETURNING);
     }
+    /*
+    // 获取所有 申请归还、待审核 的记录
+    $list = Booking::returning()->get();
+    */ 
 
     /**
      * 作用域：已归还

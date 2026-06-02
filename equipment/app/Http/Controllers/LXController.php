@@ -409,12 +409,12 @@ class LXController extends \Illuminate\Routing\Controller
 
         // 获取已归还列表
         $query = Booking::with(['user' => function($q) {
-                $q->withTrashed();
-            }, 'device' => function($q) {
-                $q->withTrashed();
-            }])
-            ->where('status', Booking::STATUS_RETURNED)
-            ->orderBy('updated_at', 'desc');
+        $q->withTrashed();
+    }, 'device' => function($q) {
+        $q->withTrashed();
+    }])
+    ->returned()                    // ✅ 替换 where('status', ...)
+    ->orderBy('updated_at', 'desc');
 
         $total = $query->count();
         $bookings = $query->forPage($page, $pageSize)->get();
