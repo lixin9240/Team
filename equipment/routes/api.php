@@ -28,10 +28,8 @@ use Illuminate\Support\Facades\Route;
     Route::put('/auth/profile', [LZWController::class, 'updateProfile']);//更新用户信息
     Route::post('/auth/avatar', [LZWController::class, 'uploadAvatar']);//上传头像
     // 管理员接口
-
-            Route::get('/admin/users', [LZWController::class, 'adminUsers']);
-        // 管理员注销用户
-        Route::delete('/admin/users/{id}', [LXController::class, 'deactivateUser']);
+    Route::get('/admin/users', [LZWController::class, 'adminUsers']);//获取所有用户（管理员）
+    Route::delete('/admin/users/{id}', [LXController::class, 'deactivateUser']); // 管理员注销用户
 
     // =======================================
     // 设备分类模块（管理员接口）

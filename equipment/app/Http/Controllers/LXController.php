@@ -70,7 +70,7 @@ class LXController extends \Illuminate\Routing\Controller
             ->orderBy('created_at', 'desc');
 
         $total = $query->count();
-        $bookings = $query->forPage($page, $pageSize)->get();
+        $bookings = $query->forPage($page, $pageSize)->get();//执行分页查询，获取当前页数据
 
         // 格式化返回数据
         $list = $bookings->map(function ($booking) {

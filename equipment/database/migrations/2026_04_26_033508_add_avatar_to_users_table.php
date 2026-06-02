@@ -14,7 +14,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->string('avatar', 255)->nullable()->after('email')->comment('头像URL');
-        });
+        });//添加头像字段
     }
 
     /**

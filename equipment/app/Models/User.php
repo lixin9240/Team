@@ -12,7 +12,7 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class User extends Authenticatable implements JWTSubject
 {
-    use HasFactory, SoftDeletes, HasApiTokens;
+    use HasFactory, SoftDeletes, HasApiTokens;// 引入工厂（生成测试数据用）、软删除、API令牌
 
 
     protected $table = 'users';
@@ -21,7 +21,7 @@ class User extends Authenticatable implements JWTSubject
 
     public $incrementing = true;
 
-    protected $keyType = 'int';
+    protected $keyType = 'int';// 主键类型为整数
 
     protected $fillable = [
         'account',// 账号
@@ -83,7 +83,7 @@ class User extends Authenticatable implements JWTSubject
     const ROLE_ADMIN = 'admin';
 
     /**
-     * 用户借用记录
+     * 用户借用记录，与 Booking 模型关联，一个用户有多条借用记录
      */
     public function bookings()
     {
@@ -97,6 +97,8 @@ class User extends Authenticatable implements JWTSubject
     {
         return $query->where('role', self::ROLE_STUDENT);
     }
+
+    //User::student()->get(); // 只获取学生用户
 
     /**
      * 获取 JWT 标识符

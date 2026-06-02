@@ -36,9 +36,6 @@ class LZWController extends Controller
                 'email' => 'required|email|max:100|regex:/^[a-zA-Z0-9._%+-]+@qq\.com$/i',
                 'email_code' => 'required|string|size:6',
 
-                // ###########################
-                // 第1处修改：直接删掉 role 验证！不让前端传！
-                // ###########################
             ], [
                 'account.min' => '账号至少4个字符',
                 'account.max' => '账号最多20个字符',
