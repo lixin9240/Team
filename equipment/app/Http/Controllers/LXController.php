@@ -75,7 +75,7 @@ class LXController extends \Illuminate\Routing\Controller
         // 格式化返回数据
         $list = $bookings->map(function ($booking) {
             // 获取分类详细信息
-            $category = \App\Models\Category::where('code', $booking->device->category ?? '')->first();
+            $category = Category::where('code', $booking->device->category ?? '')->first();
 
             return [
                 'id' => $booking->id,
