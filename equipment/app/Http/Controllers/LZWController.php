@@ -338,7 +338,6 @@ class LZWController extends Controller
         }
 
         $validated = $request->validate([
-            'name' => 'nullable|string',
             'account' => 'nullable|string|unique:users,account,' . $user->id,
             'email' => 'nullable|email|unique:users,email,' . $user->id,
             'phone' => 'nullable|string|regex:/^1[3-9]\d{9}$/|unique:users,phone,' . $user->id,
@@ -398,7 +397,7 @@ class LZWController extends Controller
         try {
             $validated = $request->validate([
                 'email' => 'required|email',
-                'type' => 'nullable|string|in:register,reset_password,bind,delete_account',//验证码类型，注册，重置密码，绑定新邮箱，注销账号等
+                'type' => 'required|string|in:register,reset_password,bind,delete_account',//验证码类型，注册，重置密码，绑定新邮箱，注销账号等
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([

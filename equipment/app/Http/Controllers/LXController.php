@@ -709,7 +709,7 @@ class LXController extends \Illuminate\Routing\Controller
             'description' => 'nullable|string',
             'total_qty' => 'required|integer|min:1',
             'available_qty' => 'required|integer|min:0',
-            'status' => 'required|in:available,maintenance',
+            'status' => 'required|in:available,maintenance'
         ]);
 
         // 检查分类是否存在（支持通过 name 或 code 查找）
