@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\ResponseCode;
+use App\Exceptions\BusinessException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -110,7 +112,7 @@ class Device extends Model
             if ($device->isDirty('category')) {
                 $category = \App\Models\Category::where('code', $device->category)->first();
                 if (!$category) {
-                    throw new \Exception("设备分类 '{$device->category}' 不存在，请先创建分类");
+                    throw new BusinessException("设备分类 '{$device->category}' 不存在，请先创建分类", ResponseCode::DATA_NOT_FOUND);
                 }
             }
         });

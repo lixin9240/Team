@@ -127,6 +127,42 @@ return [
             'path' => storage_path('logs/laravel.log'),
         ],
 
+        /**
+         * 业务日志（business）
+         * 记录核心业务流程：订单创建、审批流转、状态变更等
+         */
+        'business' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/business.log'),
+            'level' => 'info',
+            'days' => 14,
+            'replace_placeholders' => true,
+        ],
+
+        /**
+         * 异常日志（exception）
+         * 记录系统异常、SQL异常、第三方接口失败等
+         */
+        'exception' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/exception.log'),
+            'level' => 'error',
+            'days' => 30,
+            'replace_placeholders' => true,
+        ],
+
+        /**
+         * 接口日志（api）
+         * 记录所有 HTTP API 请求参数、响应、耗时
+         */
+        'api' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/api.log'),
+            'level' => 'info',
+            'days' => 7,
+            'replace_placeholders' => true,
+        ],
+
     ],
 
 ];
