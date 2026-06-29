@@ -10,7 +10,17 @@ class Category extends Model
 {
     use HasFactory, SoftDeletes;
 
+    // ─── 数据库表映射 ──────────────────────────────
+
     protected $table = 'categories';
+
+    protected $primaryKey = 'id';
+
+    public $incrementing = true;
+
+    protected $keyType = 'int';
+
+    // ─── 批量赋值字段 ──────────────────────────────
 
     protected $fillable = [
         'name',        // 分类名称
@@ -20,37 +30,34 @@ class Category extends Model
         'is_active',   // 是否启用
     ];
 
+    // ─── 数据类型转换 ──────────────────────────────
+
     protected $casts = [
         'sort_order' => 'integer',
-        'is_active' => 'boolean',
+        'is_active'  => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
     ];
 
-    /**
-     * 获取创建时间（北京时间）
-     */
+    // ─── 时间访问器（北京时间格式化） ───────────────
+
     public function getCreatedAtAttribute($value)
     {
         return $value ? \Carbon\Carbon::parse($value)->timezone('Asia/Shanghai')->format('Y-m-d H:i:s') : null;
     }
 
-    /**
-     * 获取更新时间（北京时间）
-     */
     public function getUpdatedAtAttribute($value)
     {
         return $value ? \Carbon\Carbon::parse($value)->timezone('Asia/Shanghai')->format('Y-m-d H:i:s') : null;
     }
 
-    /**
-     * 获取删除时间（北京时间）
-     */
     public function getDeletedAtAttribute($value)
     {
         return $value ? \Carbon\Carbon::parse($value)->timezone('Asia/Shanghai')->format('Y-m-d H:i:s') : null;
     }
+
+    // ─── 关联关系 ──────────────────────────────────
 
     /**
      * 关联设备
@@ -59,6 +66,8 @@ class Category extends Model
     {
         return $this->hasMany(Device::class, 'category', 'code');
     }
+
+    // ─── 查询作用域 ────────────────────────────────
 
     /**
      * 作用域：启用的分类
@@ -74,5 +83,13 @@ class Category extends Model
     public function scopeOrdered($query)
     {
         return $query->orderBy('sort_order', 'asc')->orderBy('id', 'asc');
+    }
+
+    /**
+     * 作用域：按分类编码筛选
+     */
+    public function scopeByCode($query, string $code)
+    {
+        return $query->where('code', $code);
     }
 }
